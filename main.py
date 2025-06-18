@@ -1,7 +1,7 @@
 import random
 
 import pygame
-
+from shop import*
 class Player:
     def __init__(self, speed,
                  x, y,
@@ -66,54 +66,75 @@ class Enemy:
     def draw(self, window):
         window.blit(self.skin, self.hitbox)
     def upgrade(self):
+        global missed_enemy
         self.hitbox.y += self.speed
         if self.hitbox.y >500:
             self.hitbox.y =-100
             self.hitbox.x = random.randint(0,600)
+            missed_enemy += 1
+def start_game():
+
+    pygame.init()
+    window = pygame.display.set_mode([700, 500])
+    clock = pygame.time.Clock()
+
+    background_img = pygame.image.load("galaxy.jpg")
+    background_img = pygame.transform.scale(background_img, [700, 500])
+    game = True
+
+    data = read_file()
 
 
-pygame.init()
-window = pygame.display.set_mode([700, 500])
-clock = pygame.time.Clock()
+    hero = Player(10, 500, 400, 50, 50, data["skin"])
 
-background_img = pygame.image.load("galaxy.jpg")
-background_img = pygame.transform.scale(background_img, [700, 500])
-game = True
+    enemies = []
+    y =  50
+    for i in range(10):
+        enemies.append(Enemy(5, random.randint(0, 600), y, 50, 50, "ufo.png"))
+        y -= 100
 
-hero = Player(10, 500, 400, 50, 50, "rocket.png")
+    destroyed_enemy = 0
+    missed_enemy = 0
+    missed_text = pygame.font.Font(None,20).render("Пропущено:" + str(missed_enemy), True, [255,255,255])
+    destroyed_text = pygame.font.Font(None,20).render("Знищено:"+ str(destroyed_enemy), True, [255,255,255])
+    while game:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:  #
+                print(pygame.mouse.get_pos())  #
+        destroyed_text = pygame.font.Font(None, 20).render("Знищено:" + str(destroyed_enemy), True, [255,255,255])
+        missed_text = pygame.font.Font(None, 20).render("Пропущено:" + str(missed_enemy), True, [255, 255, 255])
+        for bullet in hero.bullets[:]:
+            for enemy in enemies:
+                if bullet.hitbox.colliderect(enemy.hitbox):
+                    hero.bullets.remove(bullet)
+                    enemy.hitbox.y = -100
+                    enemy.hitbox.x = random.randint(0,600)
+                    destroyed_enemy += 1
 
-enemies = []
-y =  50
-for i in range(10):
-    enemies.append(Enemy(5, random.randint(0, 600), y, 50, 50, "ufo.png"))
-    y -= 100
+                    data = read_file()
+                    data["money"] += 1
+                    save_file(data)
+                    break
 
-while game:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
-        if event.type == pygame.MOUSEBUTTONDOWN:  #
-            print(pygame.mouse.get_pos())  #
-    for bullet in hero.bullets[:]:
+
+
+
+
+        hero.update()
+        window.fill([123, 123,123 ])
+        window.blit(background_img, [0,0])
+        window.blit(destroyed_text, [0, 0])
+        window.blit(missed_text, [0,20])
+
+        hero.draw(window)
+
         for enemy in enemies:
-            if bullet.hitbox.colliderect(enemy.hitbox):
-                hero.bullets.remove(bullet)
-                enemy.hitbox.y = -100
-                enemy.hitbox.x = random.randint(0,600)
-                break
+            enemy.draw(window)
+            enemy.upgrade()
 
+        pygame.display.flip()
 
-    hero.update()
-    window.fill([123, 123,123 ])
-    window.blit(background_img, [0,0])
-
-    hero.draw(window)
-
-    for enemy in enemies:
-        enemy.draw(window)
-        enemy.upgrade()
-
-    pygame.display.flip()
-
-    clock.tick(60)
+        clock.tick(60)
