@@ -2,6 +2,12 @@ import random
 
 import pygame
 from shop import*
+
+destroyed_enemy = 0
+missed_enemy = 0
+
+
+
 class Player:
     def __init__(self, speed,
                  x, y,
@@ -51,6 +57,24 @@ class Bullet:
     def upgrade(self):
         self.hitbox.y -= self.speed
 
+class Asteroid:
+    def __init__(self,speed, x, y,
+                 width, height,
+                 skin):
+        self.speed = speed
+        self.skin = pygame.image.load(skin)
+        self.skin = pygame.transform.scale(self.skin, [width, height])
+        self.hitbox = self.skin.get_rect()
+        self.hitbox.x = x
+        self.hitbox.y = y
+        self.asteroids = []
+
+    def draw(self, window):
+        window.blit(self.skin, self.hitbox)
+        for asteroid in self.asteroids:
+            asteroid.draw(window)
+    def upgrade(self):
+        self.hitbox.y -= self.speed
 
 class Enemy:
     def __init__(self, speed,
@@ -73,7 +97,7 @@ class Enemy:
             self.hitbox.x = random.randint(0,600)
             missed_enemy += 1
 def start_game():
-
+    global missed_enemy,destroyed_enemy
     pygame.init()
     window = pygame.display.set_mode([700, 500])
     clock = pygame.time.Clock()
@@ -93,10 +117,10 @@ def start_game():
         enemies.append(Enemy(5, random.randint(0, 600), y, 50, 50, "ufo.png"))
         y -= 100
 
-    destroyed_enemy = 0
-    missed_enemy = 0
+
     missed_text = pygame.font.Font(None,20).render("Пропущено:" + str(missed_enemy), True, [255,255,255])
     destroyed_text = pygame.font.Font(None,20).render("Знищено:"+ str(destroyed_enemy), True, [255,255,255])
+    money_text = pygame.font.Font(None,20,).render("Кількість монет:"+ str(data["money"]), True, [255,255,255])
     while game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -106,6 +130,7 @@ def start_game():
                 print(pygame.mouse.get_pos())  #
         destroyed_text = pygame.font.Font(None, 20).render("Знищено:" + str(destroyed_enemy), True, [255,255,255])
         missed_text = pygame.font.Font(None, 20).render("Пропущено:" + str(missed_enemy), True, [255, 255, 255])
+        money_text = pygame.font.Font(None, 20, ).render("Кількість монет:" + str(data["money"]), True, [255, 255, 255])
         for bullet in hero.bullets[:]:
             for enemy in enemies:
                 if bullet.hitbox.colliderect(enemy.hitbox):
@@ -118,6 +143,8 @@ def start_game():
                     data["money"] += 1
                     save_file(data)
                     break
+        for asteroid in asteroids :
+            
 
 
 
@@ -128,6 +155,7 @@ def start_game():
         window.blit(background_img, [0,0])
         window.blit(destroyed_text, [0, 0])
         window.blit(missed_text, [0,20])
+        window.blit(money_text, [0,40])
 
         hero.draw(window)
 
